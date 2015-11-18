@@ -1,0 +1,185 @@
+---
+title: "Practical Machine Learning Project"
+date: "November 17, 2015"
+output: 
+  html_document: 
+    keep_md: yes
+---
+
+Objective
+---
+The purpose of this project is to predict the exercise in which the person performed (the classe variable) using machine learning algorithms after sufficient data preparation.
+
+Data 
+----
+
+The training data for this project are available here: 
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here: 
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har. 
+
+Data Preparation
+----
+
+First, import the data in after saving the files to your working directory. 
+```{r, echo=TRUE}
+library("caret")
+library(rpart)
+library(RWeka)
+```
+
+```{r, echo=TRUE, cache=TRUE}
+train<-read.csv("pml-training.csv",h=T)
+test<-read.csv("pml-testing.csv",h=T)
+```
+
+Next, there are a lot of variables with either missing values or mostly NAs. 
+We want to remove those variables as there's not a lot of information to be gleaned from them. 
+We also want to change the variable new_window to numeric.
+
+```{r, echo=TRUE, cache=TRUE}
+
+##change the blanks to NA
+train[train==""]<-NA
+##only keep data with less than 10% blank/NA
+newtrain<-train[colSums(is.na(train))/dim(train)[1]<.1]
+#remove features with unqiue values
+newtrain2<-newtrain[,-c(1:5)]
+newtrain2$new_window<-as.numeric(newtrain2$new_window)
+```
+
+Once we have our condensed data set, we partition it into a 60/40 split for training and testing. 
+
+```{r, echo=TRUE, cache=TRUE}
+set.seed(30)
+trainIndex = createDataPartition(newtrain2$classe, p = 0.60,list=FALSE)
+training = newtrain2[trainIndex,]
+testing = newtrain2[-trainIndex,]
+```
+
+For the first machine learning algorithm, try the J48 decision tree. 
+
+```{r, echo=TRUE, cache=FALSE}
+##J48 on cleaned data
+set.seed(30)
+model1<-J48(factor(training[,55])~.,data=training[,-55])
+model1cv<-evaluate_Weka_classifier(model1,numFolds = 10)
+#summary(model1)
+#model1cv
+datanames<-names(training[,-55])
+
+results<-predict(model1,newdata=testing)
+C1 <- confusionMatrix(results, testing$classe)
+print(C1)
+```
+
+The J48 returns an accuracy of `r round(summary(model1)$details[1], 2)`% on the training data set with no cross-validation. The accuracy reduces down to `r round(model1cv$details[1],2)`% with 10-fold cross-validation and also has `r round(C1$overall[1]*100, 2)`% accuracy on the test data set. 
+
+Next, Principle Component Analysis is completed on the data set to see if model accuracy improves. 
+
+The first thing to do is make the variables numeric and run PCA on them.
+```{r, echo=TRUE, cache=FALSE}
+trainingNum <- training
+testingNum <- testing
+#Making things numeric
+for ( i in 2:(ncol(training)-1))
+{
+  trainingNum[,i]<-as.numeric(as.character(training[,i]))
+}
+
+for ( i in 2:(ncol(testing)-1))
+{
+  testingNum[,i]<-as.numeric(as.character(testing[,i]))
+}
+pca1<-prcomp(trainingNum[,-55])
+summary(pca1)
+```
+
+We will chose enough PCAs to have at least 98% of the variance included, which means keeping the 1st 15 PCAs and merge it with the classe variable to build the PCA model. We also need to apply the PCAs to the test set to test the PCA model. 
+
+```{r, echo=TRUE, cache=FALSE}
+pca2<-predict(pca1,newdata=testingNum)
+
+newpcadata<-data.frame(pca1$x[,1:15])
+newdata<-cbind(newpcadata,training[,"classe"])
+newdata<-as.data.frame(newdata)
+```
+
+Next, build a J48 decision tree using the first 15 PCAs, run cross-validation, and then apply to the PCA test set. 
+
+```{r, echo=TRUE, cache=FALSE}
+##PCA j48
+set.seed(30)
+model2<-J48(factor(newdata[,16])~.,data=newdata[,-16],control = Weka_control(R=T))
+#,control = Weka_control(C=.25,M=3) # add parameters
+model2cv<-evaluate_Weka_classifier(model2,numFolds = 10)
+
+pcaresults<-predict(model2,newdata=data.frame(pca2[,1:15]))
+C2 <- confusionMatrix(pcaresults, testing$classe)
+print(C2)
+```
+
+The PCA J48 returns an accuracy of `r round(summary(model2)$details[1], 2)`% on the training data set with no cross-validation. The accuracy reduces down to `r round(model2cv$details[1],2)`% with 10-fold cross-validation and also has `r round(C2$overall[1]*100, 2)`% accuracy on the test data set. 
+
+Next, try Random Forest. 
+
+```{r, echo=TRUE, cache=FALSE}
+library(randomForest)
+set.seed(30)
+model3 <-randomForest(factor(training[,55])~.,data=training[,-55],importance=TRUE,ntree=2000)
+```
+
+The Features plot shows the most important features using the Mean Decrease Accuracy. 
+```{r, echo=TRUE, cache=FALSE}
+varImpPlot(model3,cex = 0.9, pch = 15,color = "brown", lcolor = "blue",bg="black",type=1,main="ALL Features")
+```
+
+Next, predict against the test data set to determine the accuracy.
+```{r, echo=TRUE, cache=FALSE}
+RFresults<-predict(model3,newdata=testing)
+C3 <- confusionMatrix(RFresults, testing$classe)
+print(C3)
+```
+
+The Random Forest model returns an accuracy of `r round(C3$overall[1]*100, 2)`% accuracy on the test data set. 
+
+Out of Sample Error
+---
+
+For each model, compare the accuracy on the test set and calculate the Out of Sample Error.
+
+Model | Accuracy on Test Set | Out of Sample Error
+----- | ----- | ------ 
+J48 Model | `r C1$overall[1]` | `r 1-C1$overall[1]`
+PCA J48 Model | `r C2$overall[1]` | `r 1-C2$overall[1]`
+Random Forest Model | `r C3$overall[1]` |`r 1-C3$overall[1]`
+
+The RF Model had the lowest Out of Sample Error of `r 1-C3$overall[1]`, therefore we will predict the supplied test set with the RF model. 
+
+First, prep the test data set to include the same columns as the prepped training set, then apply the Random Forest model, and then output the predictions into individual files. 
+
+```{r, echo=TRUE, cache=FALSE, eval=TRUE}
+test2<-test[,datanames]
+test2$new_window<-as.numeric(test2$new_window)
+results3<-predict(model3,newdata=test2)
+
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+pml_write_files(results3)
+```
+
+The predictions on the test set provided were:
+````{r, echo=FALSE, eval=TRUE}
+results3
+````
+
+They were submitted and were all correct. 

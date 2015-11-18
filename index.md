@@ -117,7 +117,7 @@ print(C1)
 ## Balanced Accuracy      0.9953   0.9839   0.9859   0.9887   0.9940
 ```
 
-The J48 returns an accuracy of 99.57% on the training data set with no cross-validation. The accuracy reduces down to 97.51% with 10-fold cross-validation and also has 98.42% accuracy on the test data set. 
+The J48 returns an accuracy of 99.57% on the training data set with no cross-validation. The accuracy reduces down to 97.65% with 10-fold cross-validation and also has 98.42% accuracy on the test data set. 
 
 Next, Principle Component Analysis is completed on the data set to see if model accuracy improves. 
 
@@ -244,7 +244,7 @@ print(C2)
 ## Balanced Accuracy      0.9343   0.8832   0.8680   0.8519   0.8855
 ```
 
-The PCA J48 returns an accuracy of 91.58% on the training data set with no cross-validation. The accuracy reduces down to 80.92% with 10-fold cross-validation and also has 82.44% accuracy on the test data set. 
+The PCA J48 returns an accuracy of 91.58% on the training data set with no cross-validation. The accuracy reduces down to 80.99% with 10-fold cross-validation and also has 82.44% accuracy on the test data set. 
 
 Next, try Random Forest. 
 
@@ -269,7 +269,7 @@ The Features plot shows the most important features using the Mean Decrease Accu
 varImpPlot(model3,cex = 0.9, pch = 15,color = "brown", lcolor = "blue",bg="black",type=1,main="ALL Features")
 ```
 
-![](Project_files/figure-html/unnamed-chunk-10-1.png) 
+![](index_files/figure-html/unnamed-chunk-10-1.png) 
 
 Next, predict against the test data set to determine the accuracy.
 

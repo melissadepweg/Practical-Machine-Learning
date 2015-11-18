@@ -142,7 +142,7 @@ print(C1)</code></pre>
 ## Detection Rate         0.2828   0.1882   0.1699   0.1610   0.1823
 ## Detection Prevalence   0.2854   0.1925   0.1721   0.1649   0.1852
 ## Balanced Accuracy      0.9953   0.9839   0.9859   0.9887   0.9940</code></pre>
-<p>The J48 returns an accuracy of 99.57% on the training data set with no cross-validation. The accuracy reduces down to 97.51% with 10-fold cross-validation and also has 98.42% accuracy on the test data set.</p>
+<p>The J48 returns an accuracy of 99.57% on the training data set with no cross-validation. The accuracy reduces down to 97.65% with 10-fold cross-validation and also has 98.42% accuracy on the test data set.</p>
 <p>Next, Principle Component Analysis is completed on the data set to see if model accuracy improves.</p>
 <p>The first thing to do is make the variables numeric and run PCA on them.</p>
 <pre class="r"><code>trainingNum &lt;- training
@@ -247,7 +247,7 @@ print(C2)</code></pre>
 ## Detection Rate         0.2589   0.1582   0.1351   0.1232   0.1490
 ## Detection Prevalence   0.2884   0.1995   0.1672   0.1635   0.1814
 ## Balanced Accuracy      0.9343   0.8832   0.8680   0.8519   0.8855</code></pre>
-<p>The PCA J48 returns an accuracy of 91.58% on the training data set with no cross-validation. The accuracy reduces down to 80.92% with 10-fold cross-validation and also has 82.44% accuracy on the test data set.</p>
+<p>The PCA J48 returns an accuracy of 91.58% on the training data set with no cross-validation. The accuracy reduces down to 80.99% with 10-fold cross-validation and also has 82.44% accuracy on the test data set.</p>
 <p>Next, try Random Forest.</p>
 <pre class="r"><code>library(randomForest)</code></pre>
 <pre><code>## randomForest 4.6-12
